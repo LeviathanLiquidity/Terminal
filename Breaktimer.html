@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Focus Timer</title>
+    <style>
+        body {
+            background-color: #000;
+            color: #fff;
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            position: relative;
+            transition: background-color 0.3s;
+        }
+        /* Visual Alarm Animation */
+        @keyframes alarm-flash {
+            0% { background-color: #000; color: #fff; }
+            50% { background-color: #fff; color: #000; }
+            100% { background-color: #000; color: #fff; }
+        }
+        .alarm-active {
+            animation: alarm-flash 0.5s infinite;
+        }
+        .fs-toggle {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: none;
+            border: 1px solid #222;
+            color: #444;
+            padding: 8px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            z-index: 10;
+        }
+        .modes {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            z-index: 2;
+        }
+        .modes button {
+            background: transparent;
+            color: #666;
+            border: 1px solid #333;
+            padding: 12px 24px;
+            cursor: pointer;
+            font-size: 1.2em; 
+            letter-spacing: 1px;
+        }
+        .modes button.active {
+            color: #fff;
+            border-color: #fff;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .timer-display {
+            font-size: 10vw;
+            font-weight: 300;
+            margin: 10px 0;
+            font-variant-numeric: tabular-nums;
+            z-index: 2;
+        }
+        .controls {
+            margin-top: 25px;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            gap: 25px;
+        }
+        .btn-main {
+            background: #fff;
+            color: #000;
+            border: none;
+            padding: 15px 50px;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 1.1em;
+            cursor: pointer;
+        }
+        .btn-reset {
+            border: none;
+            background: none;
+            color: #444;
+            cursor: pointer;
+            font-size: 1em;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body id="body">
+
+    <button class="fs-toggle" id="fsBtn" onclick="toggleFS()">Full Screen</button>
+
+    <div class="modes">
+        <button id="pomo" class="active" onclick="setTimer(25)">Pomodoro</button>
+        <button id="short" onclick="setTimer(5)">Short Break</button>
+        <button id="long" onclick="setTimer(15)">Long Break</button>
+    </div>
+
+    <div class="timer-display" id="display">25:00</div>
+
+    <div class="controls">
+        <button class="btn-main" id="startBtn" onclick="toggleTimer()">Start</button>
+        <button class="btn-reset" onclick="resetTimer()">Reset</button>
+    </div>
+
+    <script>
+        let timeLeft = 1500;
+        let timerId = null;
+        let isRunning = false;
+        const body = document.getElementById('body');
+        const display = document.getElementById('display');
+        const startBtn = document.getElementById('startBtn');
+        const fsBtn = document.getElementById('fsBtn');
+
+        function updateDisplay() {
+            const mins = Math.floor(timeLeft / 60);
+            const secs = timeLeft % 60;
+            display.textContent = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+
+        function setTimer(mins) {
+            stopAlarm();
+            clearInterval(timerId);
+            isRunning = false;
+            startBtn.textContent = "Start";
+            timeLeft = mins * 60;
+            updateDisplay();
+            
+            document.querySelectorAll('.modes button').forEach(btn => btn.classList.remove('active'));
+            if(mins === 25) document.getElementById('pomo').classList.add('active');
+            if(mins === 5) document.getElementById('short').classList.add('active');
+            if(mins === 15) document.getElementById('long').classList.add('active');
+        }
+
+        function toggleTimer() {
+            stopAlarm();
+            if (isRunning) {
+                clearInterval(timerId);
+                startBtn.textContent = "Start";
+            } else {
+                timerId = setInterval(() => {
+                    timeLeft--;
+                    updateDisplay();
+                    if (timeLeft <= 0) {
+                        clearInterval(timerId);
+                        triggerAlarm();
+                    }
+                }, 1000);
+                startBtn.textContent = "Pause";
+            }
+            isRunning = !isRunning;
+        }
+
+        function triggerAlarm() {
+            body.classList.add('alarm-active');
+            startBtn.textContent = "Stop Alarm";
+        }
+
+        function stopAlarm() {
+            body.classList.remove('alarm-active');
+        }
+
+        function resetTimer() {
+            stopAlarm();
+            clearInterval(timerId);
+            isRunning = false;
+            startBtn.textContent = "Start";
+            const activeMode = document.querySelector('.active').id;
+            if(activeMode === 'pomo') timeLeft = 1500;
+            else if(activeMode === 'short') timeLeft = 300;
+            else timeLeft = 900;
+            updateDisplay();
+        }
+
+        function toggleFS() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+                fsBtn.textContent = "Exit Full Screen";
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                    fsBtn.textContent = "Full Screen";
+                }
+            }
+        }
+
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement) fsBtn.textContent = "Full Screen";
+        });
+    </script>
+</body>
+</html>
